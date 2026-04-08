@@ -35,4 +35,4 @@ export const ITEM_CONFIGS: ItemConfig[] = Array.from({ length: 100 }, (_, i) => 
 
 export const ITEMS_PER_ROOM = 5;
 
-export const CAMERA_POSITION = { x: 0, y: 1.6, z: 4 };
+export const CAMERA_POSITION = { x: 0, y: 1.2, z: 4 };

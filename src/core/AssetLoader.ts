@@ -26,7 +26,7 @@ export class AssetLoader {
     manager.onProgress = (_url, loaded, total) => {
       onProgress?.({
         loaded: loaded / total,
-        label: `Loading assets… (${loaded}/${total})`,
+        label: `Загрузка ассетов… (${loaded}/${total})`,
       });
     };
 
@@ -86,7 +86,7 @@ export class AssetLoader {
         done++;
         onProgress?.({
           loaded: done / unique.length,
-          label: `Loaded ${done} / ${unique.length} assets`,
+          label: `Загружено ${done} / ${unique.length} ассетов`,
         });
       })
     );

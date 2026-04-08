@@ -45,33 +45,33 @@ async function bootstrap(): Promise<void> {
   const roomManager = new RoomManager(game.scene, loader, itemManager);
 
   // ── HUD wiring ───────────────────────────────────────────────
-  const roomIndexEl = document.getElementById('room-index');
-  const btnPrev     = document.getElementById('btn-prev') as HTMLButtonElement;
-  const btnNext     = document.getElementById('btn-next') as HTMLButtonElement;
+//   const roomIndexEl = document.getElementById('room-index');
+//   const btnPrev     = document.getElementById('btn-prev') as HTMLButtonElement;
+//   const btnNext     = document.getElementById('btn-next') as HTMLButtonElement;
 
-  roomManager.onRoomChanged = (id, _total) => {
-    if (roomIndexEl) roomIndexEl.textContent = String(id);
-  };
+//   roomManager.onRoomChanged = (id, _total) => {
+//     if (roomIndexEl) roomIndexEl.textContent = String(id);
+//   };
 
-  btnNext.addEventListener('click', async () => {
-    btnNext.disabled = btnPrev.disabled = true;
-    await roomManager.goNext();
-    btnNext.disabled = btnPrev.disabled = false;
-  });
+//   btnNext.addEventListener('click', async () => {
+//     btnNext.disabled = btnPrev.disabled = true;
+//     await roomManager.goNext();
+//     btnNext.disabled = btnPrev.disabled = false;
+//   });
 
-  btnPrev.addEventListener('click', async () => {
-    btnNext.disabled = btnPrev.disabled = true;
-    await roomManager.goPrev();
-    btnNext.disabled = btnPrev.disabled = false;
-  });
+//   btnPrev.addEventListener('click', async () => {
+//     btnNext.disabled = btnPrev.disabled = true;
+//     await roomManager.goPrev();
+//     btnNext.disabled = btnPrev.disabled = false;
+//   });
 
   // ── Item update hook ─────────────────────────────────────────
   game.onUpdate((dt) => itemManager.update(dt));
 
   // ── First room ───────────────────────────────────────────────
-  loadingScreen.setProgress(0.95, 'Building first room…');
+  loadingScreen.setProgress(0.95, 'Строим первую комнату…');
   await roomManager.init();
-  loadingScreen.setProgress(1, 'Ready');
+  loadingScreen.setProgress(1, 'Готово');
 
   // Small delay so the "Ready" state is visible before fade
   await delay(300);

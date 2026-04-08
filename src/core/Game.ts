@@ -6,8 +6,8 @@ import {
   DirectionalLight,
   PCFSoftShadowMap,
   Color,
-} from 'three';
-import { CAMERA_POSITION } from '../config/gameConfig';
+} from "three";
+import { CAMERA_POSITION } from "../config/gameConfig";
 
 // ─────────────────────────────────────────────────────────────────
 //  Game
@@ -29,7 +29,7 @@ export class Game {
   constructor(container: HTMLElement) {
     // ── Renderer ────────────────────────────────────────────────
     this.renderer = new WebGLRenderer({ antialias: true, alpha: false });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = PCFSoftShadowMap;
     this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -41,22 +41,22 @@ export class Game {
 
     // ── Camera ──────────────────────────────────────────────────
     this.camera = new PerspectiveCamera(
-      60,
+      45,
       window.innerWidth / window.innerHeight,
       0.01,
-      100
+      75,
     );
     this.camera.position.set(
       CAMERA_POSITION.x,
       CAMERA_POSITION.y,
-      CAMERA_POSITION.z
+      CAMERA_POSITION.z,
     );
 
     // ── Lights ──────────────────────────────────────────────────
     this._setupLights();
 
     // ── Resize ──────────────────────────────────────────────────
-    window.addEventListener('resize', this._onResize);
+    window.addEventListener("resize", this._onResize);
   }
 
   // ─── Lifecycle ──────────────────────────────────────────────────
@@ -72,7 +72,7 @@ export class Game {
 
   dispose(): void {
     this.stop();
-    window.removeEventListener('resize', this._onResize);
+    window.removeEventListener("resize", this._onResize);
     this.renderer.dispose();
   }
 
@@ -86,11 +86,15 @@ export class Game {
   // ─── Private ────────────────────────────────────────────────────
 
   private _setupLights(): void {
-    const ambient = new AmbientLight(0xffffff, 0.6);
+    const ambient = new AmbientLight(0xffffff, 0.8);
     this.scene.add(ambient);
 
     const sun = new DirectionalLight(0xffffff, 1.2);
-    sun.position.set(4, 8, 4);
+    sun.position.set(4, 8, 2);
+    sun.shadow.mapSize.set(2048, 2048); // выше разрешение = меньше "пикселизации" при размытии
+    sun.shadow.radius = 6; // главный параметр мягкости (2–6 обычно оптимально)
+    sun.shadow.bias = -0.0005; // убирает артефакты "самотенения" (shadow acne)
+    sun.shadow.normalBias = 0.02; // дополнительно сглаживает стыки геометрии
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
     sun.shadow.camera.near = 0.1;
