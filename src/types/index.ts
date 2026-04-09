@@ -1,38 +1,44 @@
-import type * as THREE from 'three';
+import type * as THREE from 'three'
 
-// ─────────────────────────────────────────────
-// Config types
-// ─────────────────────────────────────────────
+export interface Boundary {
+  minX: number
+  maxX: number
+}
+
+export interface AnimationNames {
+  idle: string
+  walk: string
+}
+
+export interface CharacterConfig {
+  id: string
+  name: string
+  modelPath: string
+  speed: number
+  animations: AnimationNames
+}
 
 export interface RoomConfig {
-  /** Unique numeric ID (1–20) */
-  id: number;
-  /** Path relative to /public */
-  modelPath: string;
-  /** Named slots inside the GLTF scene that accept items */
-  slots: string[];
+  id: number
+  modelPath: string
+  slots: string[]
+  boundary: Boundary
 }
 
 export interface ItemConfig {
-  id: string;
-  modelPath: string;
-  /** Optional uniform scale override */
-  scale?: number;
+  id: string
+  modelPath: string
 }
 
-// ─────────────────────────────────────────────
-// Runtime types
-// ─────────────────────────────────────────────
-
 export interface SlotDescriptor {
-  name: string;
-  /** The Object3D found inside the room's scene graph */
-  anchor: THREE.Object3D;
+  name: string
+  anchor: THREE.Object3D
 }
 
 export interface LoadProgress {
-  loaded: number;  // 0–1
-  label: string;
+  loaded: number
+  label: string
+  elapsedTime: number
 }
 
-export type LoadProgressCallback = (p: LoadProgress) => void;
+export type LoadProgressCallback = (p: LoadProgress) => void

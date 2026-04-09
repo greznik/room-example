@@ -1,82 +1,76 @@
-import type { Scene } from 'three';
-import { AssetLoader } from '../core/AssetLoader';
-import { Room } from '../entities/Room';
-import { ItemManager } from './ItemManager';
-import { ROOM_CONFIGS } from '../config/gameConfig';
-
-// ─────────────────────────────────────────────────────────────────
-//  RoomManager
-//
-//  Tracks all 20 room configs and manages which one is active.
-//  On room change it:
-//    1. Removes old room + its items from the scene.
-//    2. Instantiates (or retrieves from cache) the new room model.
-//    3. Asks ItemManager to populate the new room.
-// ─────────────────────────────────────────────────────────────────
+import type { Scene } from "three";
+import { AssetLoader } from "../core/AssetLoader";
+import { Room } from "../entities/Room";
+import { ItemManager } from "./ItemManager";
+import { ROOM_CONFIGS } from "../config/gameConfig";
 
 export class RoomManager {
   private readonly scene: Scene;
   private readonly loader: AssetLoader;
   private readonly itemManager: ItemManager;
 
-  /** Zero-based index into ROOM_CONFIGS. */
-  private _currentIndex = 0;
-  private _currentRoom: Room | null = null;
+  private idx = 0;
+  private room: Room | null = null;
 
-  /** Optional callback so the HUD can react to room changes. */
+  // Индексы, которые уже загружены в кэш — не грузим повторно
+  private prefetched = new Set<number>();
+
   onRoomChanged?: (roomId: number, total: number) => void;
 
   constructor(scene: Scene, loader: AssetLoader, itemManager: ItemManager) {
-    this.scene       = scene;
-    this.loader      = loader;
+    this.scene = scene;
+    this.loader = loader;
     this.itemManager = itemManager;
   }
 
-  // ─── Public API ─────────────────────────────────────────────────
+  get currentRoom(): Room | null {
+    return this.room;
+  }
+  get totalRooms(): number {
+    return ROOM_CONFIGS.length;
+  }
 
-  get currentIndex(): number  { return this._currentIndex; }
-  get totalRooms():   number  { return ROOM_CONFIGS.length; }
-  get currentRoom():  Room | null { return this._currentRoom; }
-
-  /** Show the first room. Call once after preloading. */
   async init(): Promise<void> {
-    await this._loadRoom(0);
+    await this.loadRoom(0);
   }
-
   async goNext(): Promise<void> {
-    const next = (this._currentIndex + 1) % ROOM_CONFIGS.length;
-    await this._loadRoom(next);
+    await this.loadRoom((this.idx + 1) % this.totalRooms);
   }
-
   async goPrev(): Promise<void> {
-    const prev =
-      (this._currentIndex - 1 + ROOM_CONFIGS.length) % ROOM_CONFIGS.length;
-    await this._loadRoom(prev);
+    await this.loadRoom((this.idx - 1 + this.totalRooms) % this.totalRooms);
   }
 
-  // ─── Private ────────────────────────────────────────────────────
-
-  private async _loadRoom(index: number): Promise<void> {
-    // 1. Tear down current room
-    if (this._currentRoom) {
+  private async loadRoom(index: number): Promise<void> {
+    // Убираем текущую комнату
+    if (this.room) {
       this.itemManager.clearActiveItems();
-      this._currentRoom.removeFromScene();
-      this._currentRoom = null;
+      this.room.removeFromScene();
     }
 
-    // 2. Instantiate new room
     const config = ROOM_CONFIGS[index];
-    const group  = await this.loader.load(config.modelPath);
-    const room   = new Room(config, group);
-    room.addToScene(this.scene);
+    const group = await this.loader.load(config.modelPath);
 
-    // 3. Populate with items
-    await this.itemManager.populateRoom(room);
+    this.room = new Room(config, group);
+    this.room.addToScene(this.scene);
+    this.idx = index;
 
-    // 4. Update state
-    this._currentRoom  = room;
-    this._currentIndex = index;
+    await this.itemManager.populateRoom(this.room);
+    this.onRoomChanged?.(config.id, this.totalRooms);
 
-    this.onRoomChanged?.(config.id, ROOM_CONFIGS.length);
+    // Предзагружаем ТОЛЬКО следующую и предыдущую, один раз
+    this.prefetchNeighbors(index);
+  }
+
+  private prefetchNeighbors(current: number): void {
+    const neighbors = [
+      (current + 1) % this.totalRooms,
+      (current - 1 + this.totalRooms) % this.totalRooms,
+    ];
+    for (const i of neighbors) {
+      if (!this.prefetched.has(i)) {
+        this.prefetched.add(i);
+        this.loader.load(ROOM_CONFIGS[i].modelPath).catch(() => {});
+      }
+    }
   }
 }
