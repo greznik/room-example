@@ -6,8 +6,10 @@ import {
   DirectionalLight,
   PCFSoftShadowMap,
   Color,
+  EquirectangularReflectionMapping,
 } from "three";
 import { CAMERA_POSITION } from "../config/gameConfig";
+import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 
 // ─────────────────────────────────────────────────────────────────
 //  Game
@@ -21,6 +23,7 @@ export class Game {
   readonly renderer: WebGLRenderer;
   readonly scene: Scene;
   readonly camera: PerspectiveCamera;
+  private rgbeLoader = new RGBELoader();
 
   private _rafId = 0;
   private _updateCallbacks: Array<(dt: number) => void> = [];
@@ -37,7 +40,11 @@ export class Game {
 
     // ── Scene ───────────────────────────────────────────────────
     this.scene = new Scene();
-    this.scene.background = new Color(0x111111);
+    this.rgbeLoader.load("/environmentMaps/1/2k.hdr", (environmentMap) => {
+      environmentMap.mapping = EquirectangularReflectionMapping;
+
+      this.scene.environment = environmentMap;
+    });
 
     // ── Camera ──────────────────────────────────────────────────
     this.camera = new PerspectiveCamera(
@@ -52,14 +59,10 @@ export class Game {
       CAMERA_POSITION.z,
     );
 
-    // ── Lights ──────────────────────────────────────────────────
     this._setupLights();
 
-    // ── Resize ──────────────────────────────────────────────────
     window.addEventListener("resize", this._onResize);
   }
-
-  // ─── Lifecycle ──────────────────────────────────────────────────
 
   start(): void {
     this._lastTime = performance.now();
@@ -76,14 +79,9 @@ export class Game {
     this.renderer.dispose();
   }
 
-  // ─── Update hook ────────────────────────────────────────────────
-
-  /** Register a per-frame callback that receives delta time in seconds. */
   onUpdate(cb: (dt: number) => void): void {
     this._updateCallbacks.push(cb);
   }
-
-  // ─── Private ────────────────────────────────────────────────────
 
   private _setupLights(): void {
     const ambient = new AmbientLight(0xffffff, 0.8);
@@ -91,10 +89,10 @@ export class Game {
 
     const sun = new DirectionalLight(0xffffff, 1.2);
     sun.position.set(4, 8, 2);
-    sun.shadow.mapSize.set(2048, 2048); // выше разрешение = меньше "пикселизации" при размытии
-    sun.shadow.radius = 6; // главный параметр мягкости (2–6 обычно оптимально)
-    sun.shadow.bias = -0.0005; // убирает артефакты "самотенения" (shadow acne)
-    sun.shadow.normalBias = 0.02; // дополнительно сглаживает стыки геометрии
+    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.radius = 6;
+    sun.shadow.bias = -0.0005;
+    sun.shadow.normalBias = 0.02;
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
     sun.shadow.camera.near = 0.1;
