@@ -5,7 +5,6 @@ import {
   AmbientLight,
   DirectionalLight,
   PCFSoftShadowMap,
-  Color,
   EquirectangularReflectionMapping,
 } from "three";
 import { CAMERA_POSITION } from "../config/gameConfig";
