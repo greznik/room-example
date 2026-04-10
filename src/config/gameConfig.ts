@@ -129,7 +129,7 @@ const ROOM_ENV: Record<number, RoomEnvConfig> = {
       {
         type: "directional",
         color: 0xffffff,
-        intensity: 0,
+        intensity: 1.5,
         position: [2, 3, 1],
         castShadow: true,
       },
