@@ -62,7 +62,7 @@ export class Game {
   onUpdate(cb: TickCallback): void { this.updateCallbacks.push(cb) }
 
   private setupLights(): void {
-    this.scene.add(new AmbientLight(0xffffff, 0.8))
+    this.scene.add(new AmbientLight(0xffffff, 1.5))
     const sun = new DirectionalLight(0xffffff, 1.5)
     sun.position.set(2, 3, 1)
     sun.castShadow = true

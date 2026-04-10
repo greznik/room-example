@@ -50,10 +50,11 @@ export class GameInitializer {
     if (b) this.player.updateBoundary(b);
 
     const roomEnv = GAME_CONFIG.roomEnvMap[firstRoom.id];
-    const envMap = await this.loader.loadEnvMap(
-      roomEnv?.envMapUrl ?? GAME_CONFIG.defaultEnvMapUrl,
-    );
-    this.game.scene.environment = envMap;
+
+    if (roomEnv?.envMapUrl) {
+      const envMap = await this.loader.loadEnvMap(roomEnv?.envMapUrl);
+      this.game.scene.environment = envMap;
+    }
 
     await this.player.switchTo(GAME_CONFIG.characters[0]);
     this.game.trackObject(this.player.root);

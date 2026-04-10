@@ -123,13 +123,13 @@ const ITEMS: ItemConfig[] = Array.from({ length: 1 }, (_, i) => ({
  */
 const ROOM_ENV: Record<number, RoomEnvConfig> = {
   1: {
-    envMapUrl: "/environmentMaps/2.hdr",
+    envMapUrl: "",
     lights: [
       { type: "ambient", color: 0xffeedd, intensity: 0.8 },
       {
         type: "directional",
         color: 0xffffff,
-        intensity: 1.5,
+        intensity: 0,
         position: [2, 3, 1],
         castShadow: true,
       },
@@ -170,7 +170,7 @@ export const GAME_CONFIG: GameConfig = {
   items: ITEMS,
   itemsPerRoom: 5,
   roomEnvMap: ROOM_ENV,
-  defaultEnvMapUrl: "/environmentMaps/1.hdr",
+  defaultEnvMapUrl: "",
 };
 
 // Обратная совместимость
