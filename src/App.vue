@@ -1,9 +1,7 @@
 <template>
   <div id="app">
-    <!-- Canvas: Three.js рисует сюда -->
     <div ref="canvasContainer" class="canvas-wrap" />
 
-    <!-- LoadingScreen: управляется через store, не через DOM -->
     <LoadingScreen
       :visible="store.isLoading"
       :ratio="store.loadRatio"
@@ -11,7 +9,6 @@
       :elapsed="store.loadTime"
     />
 
-    <!-- UI поверх игры — только после загрузки -->
     <template v-if="!store.isLoading">
       <div class="top-bar">
         <span>Комната {{ store.currentRoom }} / {{ store.totalRooms }}</span>
@@ -20,19 +17,9 @@
 
       <div class="controls">
         <button :disabled="busy" @click="nav('prev')">← Пред</button>
+        <button @click="store.triggerSpawn()">Показать диван</button>
         <button :disabled="busy" @click="nav('next')">След →</button>
       </div>
-
-      <!-- <div class="characters">
-        <button
-          v-for="(char, i) in CHARACTERS_CONFIG"
-          :key="char.id"
-          :class="{ active: store.selectedCharacter === i }"
-          @click="switchChar(i)"
-        >
-          {{ char.name }}
-        </button>
-      </div> -->
     </template>
   </div>
 </template>
@@ -51,17 +38,12 @@ const busy = ref(false);
 
 onMounted(async () => {
   if (!canvasContainer.value) return;
-
   const initializer = new GameInitializer();
-
   controller.value = await initializer.initialize(
     canvasContainer.value,
-    // Колбэк прогресса → напрямую в store
     (ratio, label, elapsed) => store.setProgress(ratio, label, elapsed),
   );
-
   store.setLoading(false);
-  store.start(); // запустит game.start() через store-action
 });
 
 async function nav(dir: "next" | "prev") {
@@ -80,7 +62,6 @@ async function nav(dir: "next" | "prev") {
   margin: 0;
   padding: 0;
 }
-
 body {
   overflow: hidden;
   background: #0a0a0a;
@@ -88,13 +69,11 @@ body {
   color: #fff;
   touch-action: none;
 }
-
 .canvas-wrap {
   position: fixed;
   inset: 0;
   z-index: 1;
 }
-
 .top-bar {
   position: fixed;
   top: 20px;
@@ -108,28 +87,18 @@ body {
   padding: 6px 14px;
   border-radius: 8px;
 }
-
 .time-badge {
   color: #fbbf24;
 }
-
-.controls,
-.characters {
+.controls {
   position: fixed;
+  bottom: 64px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
   display: flex;
   gap: 8px;
 }
-
-.controls {
-  bottom: 64px;
-}
-.characters {
-  bottom: 16px;
-}
-
 button {
   padding: 8px 14px;
   background: rgba(255, 255, 255, 0.1);
@@ -145,11 +114,5 @@ button:hover {
 button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-}
-button.active {
-  background: #4ade80;
-  color: #000;
-  font-weight: bold;
-  border-color: transparent;
 }
 </style>

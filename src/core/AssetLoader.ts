@@ -4,115 +4,126 @@ import {
   WebGLRenderer,
   Texture,
   EquirectangularReflectionMapping,
-} from "three";
-import {
-  GLTFLoader,
-  type GLTF,
-} from "three/examples/jsm/loaders/GLTFLoader.js";
-import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
-import { KTX2Loader } from "three/examples/jsm/loaders/KTX2Loader.js";
-import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
-import type { LoadProgressCallback } from "../types";
+  PMREMGenerator,
+  CompressedTexture,
+} from 'three'
+import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
+import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js'
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
+import type { LoadProgressCallback } from '../types'
 
 export class AssetLoader {
-  private static instance: AssetLoader;
+  private static instance: AssetLoader
 
-  private readonly gltfLoader: GLTFLoader;
-  private readonly rgbeLoader: RGBELoader;
+  private readonly gltfLoader: GLTFLoader
+  private readonly rgbeLoader: RGBELoader
+  private readonly ktx2Loader: KTX2Loader
 
-  // Кэш: url → оригинальный Group (клонируем на выдаче)
-  private readonly meshCache = new Map<string, Group>();
-  // Кэш: url → оригинальный GLTF (для доступа к animations)
-  private readonly gltfCache = new Map<string, GLTF>();
-  // Кэш: url → HDR Texture
-  private readonly envCache = new Map<string, Texture>();
+  private readonly gltfCache = new Map<string, GLTF>()
+  private readonly envCache = new Map<string, Texture>()
 
-  private readonly startTime = performance.now();
+  private pmrem: PMREMGenerator | null = null
+  private readonly startTime = performance.now()
 
   private constructor(onProgress?: LoadProgressCallback) {
-    const manager = new LoadingManager();
+    const manager = new LoadingManager()
 
     manager.onProgress = (_url, loaded, total) => {
       onProgress?.({
         loaded: Math.min(loaded / total, 0.99),
-        label: "Загрузка ресурсов…",
+        label: 'Загрузка ресурсов…',
         elapsedTime: (performance.now() - this.startTime) / 1000,
-      });
-    };
+      })
+    }
 
-    const draco = new DRACOLoader(manager);
-    draco.setDecoderPath(
-      "https://www.gstatic.com/draco/versioned/decoders/1.5.7/",
-    );
+    const draco = new DRACOLoader(manager)
+    draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/')
 
-    const ktx2 = new KTX2Loader(manager);
-    ktx2.setTranscoderPath("/basis/");
+    this.ktx2Loader = new KTX2Loader(manager)
+    this.ktx2Loader.setTranscoderPath('/basis/')
 
-    this.gltfLoader = new GLTFLoader(manager);
-    this.gltfLoader.setDRACOLoader(draco);
-    this.gltfLoader.setKTX2Loader(ktx2);
+    this.gltfLoader = new GLTFLoader(manager)
+    this.gltfLoader.setDRACOLoader(draco)
+    this.gltfLoader.setKTX2Loader(this.ktx2Loader)
 
-    this.rgbeLoader = new RGBELoader(manager);
+    this.rgbeLoader = new RGBELoader(manager)
   }
 
   static getInstance(onProgress?: LoadProgressCallback): AssetLoader {
-    if (!AssetLoader.instance)
-      AssetLoader.instance = new AssetLoader(onProgress);
-    return AssetLoader.instance;
+    if (!AssetLoader.instance) AssetLoader.instance = new AssetLoader(onProgress)
+    return AssetLoader.instance
   }
 
   initRendererSupport(renderer: WebGLRenderer): void {
-    (this.gltfLoader.ktx2Loader as KTX2Loader)?.detectSupport(renderer);
+    this.ktx2Loader.detectSupport(renderer)
+    this.pmrem = new PMREMGenerator(renderer)
+    this.pmrem.compileEquirectangularShader()
   }
 
-  /** Загрузить GLB → клонированный Group (для комнат и предметов) */
   async load(url: string): Promise<Group> {
-    const cached = this.meshCache.get(url);
-    if (cached) return cached.clone(true);
-
-    const gltf = await this.fetchGltf(url);
-    return gltf.scene.clone(true);
+    const gltf = await this.loadGltf(url)
+    return gltf.scene.clone(true)
   }
 
   async loadGltf(url: string): Promise<GLTF> {
-    const cached = this.gltfCache.get(url);
-    if (cached) return cached;
-    return this.fetchGltf(url);
+    const cached = this.gltfCache.get(url)
+    if (cached) return cached
+
+    const gltf = await this.gltfLoader.loadAsync(url)
+    gltf.scene.traverse((node) => {
+      if ('isMesh' in node && node.isMesh) {
+        node.castShadow = true
+        node.receiveShadow = true
+      }
+    })
+
+    this.gltfCache.set(url, gltf)
+    return gltf
   }
 
-  async loadEnvMap(hdrUrl: string): Promise<Texture> {
-    const cached = this.envCache.get(hdrUrl);
-    if (cached) return cached;
+  /**
+   * Загружает HDR envMap (.hdr или .ktx2) → PMREM-текстура.
+   * Конвертация .hdr → .ktx2:
+   *   toktx --t2 --encode uastc --uastc_quality 2 \
+   *          --assign_oetf linear --assign_primaries bt709 \
+   *          output.ktx2 input.hdr
+   */
+  async loadEnvMap(url: string): Promise<Texture> {
+    const cached = this.envCache.get(url)
+    if (cached) return cached
 
-    const tex = await this.rgbeLoader.loadAsync(hdrUrl);
-    tex.mapping = EquirectangularReflectionMapping;
-    this.envCache.set(hdrUrl, tex);
-    return tex;
+    if (!this.pmrem) {
+      throw new Error('[AssetLoader] Call initRendererSupport(renderer) before loadEnvMap')
+    }
+
+    let pmremTex: Texture
+
+    if (url.endsWith('.ktx2')) {
+      // KTX2Loader возвращает CompressedTexture — корректный тип
+      const compressed = await new Promise<CompressedTexture>((resolve, reject) => {
+        this.ktx2Loader.load(url, resolve, undefined, reject)
+      })
+      compressed.mapping = EquirectangularReflectionMapping
+      pmremTex = this.pmrem.fromEquirectangular(compressed).texture
+      compressed.dispose()
+    } else {
+      // RGBE .hdr fallback
+      const hdrTex = await this.rgbeLoader.loadAsync(url)
+      hdrTex.mapping = EquirectangularReflectionMapping
+      pmremTex = this.pmrem.fromEquirectangular(hdrTex).texture
+      hdrTex.dispose()
+    }
+
+    this.envCache.set(url, pmremTex)
+    return pmremTex
   }
 
   async preloadBatch(urls: string[]): Promise<void> {
-    await Promise.allSettled(urls.map((u) => this.load(u)));
+    await Promise.allSettled(urls.map((u) => this.load(u)))
   }
 
   getElapsedTime(): number {
-    return (performance.now() - this.startTime) / 1000;
-  }
-
-  private async fetchGltf(url: string): Promise<GLTF> {
-    const cached = this.gltfCache.get(url);
-    if (cached) return cached;
-
-    const gltf = await this.gltfLoader.loadAsync(url);
-
-    gltf.scene.traverse((node) => {
-      if ("isMesh" in node && node.isMesh) {
-        node.castShadow = true;
-        node.receiveShadow = true;
-      }
-    });
-
-    this.gltfCache.set(url, gltf);
-    this.meshCache.set(url, gltf.scene);
-    return gltf;
+    return (performance.now() - this.startTime) / 1000
   }
 }
