@@ -14,7 +14,7 @@ import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
 import type { LoadProgressCallback } from '../types'
 
 export class AssetLoader {
-  private static instance: AssetLoader
+  private static instance: AssetLoader | null = null
 
   private readonly gltfLoader: GLTFLoader
   private readonly rgbeLoader: RGBELoader
@@ -24,13 +24,15 @@ export class AssetLoader {
   private readonly envCache = new Map<string, Texture>()
 
   private pmrem: PMREMGenerator | null = null
+  private onProgress: LoadProgressCallback | undefined
   private readonly startTime = performance.now()
 
   private constructor(onProgress?: LoadProgressCallback) {
-    const manager = new LoadingManager()
+    this.onProgress = onProgress
 
+    const manager = new LoadingManager()
     manager.onProgress = (_url, loaded, total) => {
-      onProgress?.({
+      this.onProgress?.({
         loaded: Math.min(loaded / total, 0.99),
         label: 'Загрузка ресурсов…',
         elapsedTime: (performance.now() - this.startTime) / 1000,
@@ -50,9 +52,18 @@ export class AssetLoader {
     this.rgbeLoader = new RGBELoader(manager)
   }
 
+  /** Получить или создать singleton. onProgress обновляется при каждом вызове. */
   static getInstance(onProgress?: LoadProgressCallback): AssetLoader {
-    if (!AssetLoader.instance) AssetLoader.instance = new AssetLoader(onProgress)
+    if (!AssetLoader.instance) {
+      AssetLoader.instance = new AssetLoader(onProgress)
+    } else if (onProgress) {
+      AssetLoader.instance.onProgress = onProgress
+    }
     return AssetLoader.instance
+  }
+
+  static reset(): void {
+    AssetLoader.instance = null
   }
 
   initRendererSupport(renderer: WebGLRenderer): void {
@@ -84,10 +95,13 @@ export class AssetLoader {
 
   /**
    * Загружает HDR envMap (.hdr или .ktx2) → PMREM-текстура.
-   * Конвертация .hdr → .ktx2:
-   *   toktx --t2 --encode uastc --uastc_quality 2 \
-   *          --assign_oetf linear --assign_primaries bt709 \
-   *          output.ktx2 input.hdr
+   *
+   * Конвертация текстур в GLB (ETC1S, ~2bpp вместо 8):
+   *   npx @gltf-transform/cli etc1s input.glb output.glb
+   *
+   * Для нормалей лучше UASTC:
+   *   npx @gltf-transform/cli uastc input.glb output.glb --slots normalTexture
+   *   npx @gltf-transform/cli etc1s output.glb output.glb
    */
   async loadEnvMap(url: string): Promise<Texture> {
     const cached = this.envCache.get(url)
@@ -100,7 +114,6 @@ export class AssetLoader {
     let pmremTex: Texture
 
     if (url.endsWith('.ktx2')) {
-      // KTX2Loader возвращает CompressedTexture — корректный тип
       const compressed = await new Promise<CompressedTexture>((resolve, reject) => {
         this.ktx2Loader.load(url, resolve, undefined, reject)
       })
@@ -108,7 +121,6 @@ export class AssetLoader {
       pmremTex = this.pmrem.fromEquirectangular(compressed).texture
       compressed.dispose()
     } else {
-      // RGBE .hdr fallback
       const hdrTex = await this.rgbeLoader.loadAsync(url)
       hdrTex.mapping = EquirectangularReflectionMapping
       pmremTex = this.pmrem.fromEquirectangular(hdrTex).texture

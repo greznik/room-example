@@ -1,6 +1,6 @@
 import { AssetLoader } from '../core/AssetLoader'
 import { Item } from '../entities/Item'
-import { ITEM_CONFIGS } from '../config/gameConfig'
+import { GAME_CONFIG } from '../config/gameConfig'
 import type { Room } from '../entities/Room'
 
 export class ItemManager {
@@ -25,9 +25,9 @@ export class ItemManager {
           return
         }
 
-        const conf = ITEM_CONFIGS.find(c => c.id === itemId)
+        const conf = GAME_CONFIG.items.find((c) => c.id === itemId)
         if (!conf) {
-          console.warn(`[ItemManager] Предмет "${itemId}" не найден в ITEM_CONFIGS`)
+          console.warn(`[ItemManager] Предмет "${itemId}" не найден в конфиге`)
           return
         }
 
@@ -35,22 +35,16 @@ export class ItemManager {
         const item = new Item(conf, group)
         item.attachToSlot(slot.anchor)
         this.activeItems.push(item)
-      })
+      }),
     )
   }
 
-  /** Запустить анимацию появления всех предметов в комнате */
   spawnAll(): void {
-    for (const item of this.activeItems) {
-      item.spawn()
-    }
+    for (const item of this.activeItems) item.spawn()
   }
 
-  /** Вызывать каждый кадр */
   update(dt: number): void {
-    for (const item of this.activeItems) {
-      item.update(dt)
-    }
+    for (const item of this.activeItems) item.update(dt)
   }
 
   clearActiveItems(): void {
