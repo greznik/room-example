@@ -1,4 +1,3 @@
-import { watch } from "vue";
 import { Game } from "./Game";
 import { AssetLoader } from "./AssetLoader";
 import { Player } from "../entities/Player";
@@ -63,14 +62,6 @@ export class GameInitializer {
       this.player.update(dt);
       this.itemManager.update(dt);
     });
-
-    // Реагируем на триггер из store — не нужен метод в контроллере
-    watch(
-      () => store.spawnTrigger,
-      () => {
-        this.itemManager.spawnAll();
-      },
-    );
 
     this.setupKeyboard();
     this.setupTouch(container);

@@ -42,6 +42,7 @@ export class RoomManager {
     this.idx = index
 
     await this.itemManager.populateRoom(this.room)
+    this.itemManager.spawnAll()
     this.onRoomChanged?.(config.id, this.totalRooms)
 
     this.prefetchNeighbors(index)

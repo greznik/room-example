@@ -7,6 +7,7 @@ import {
   PCFSoftShadowMap,
   Object3D,
 } from "three";
+import Stats from "stats.js";
 import { GAME_CONFIG } from "../config/gameConfig";
 
 const MAX_SIZE = 640;
@@ -23,6 +24,7 @@ export class Game {
   private lastTime = 0;
   private trackedRoot: Object3D | null = null;
   private container: HTMLElement;
+  private stats: Stats | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -46,12 +48,28 @@ export class Game {
     this.camera.position.set(offset.x, offset.y, offset.z);
 
     this.setupLights();
+    this.addStats();
     this.onResize();
     window.addEventListener("resize", this.onResize);
   }
 
   trackObject(root: Object3D): void {
     this.trackedRoot = root;
+  }
+
+  addStats(): void {
+    this.stats = new Stats();
+
+    this.stats.dom.style.transform = 'scale(0.7)';
+    this.stats.dom.style.transformOrigin = 'top left';
+    if (getComputedStyle(this.container).position === "static") {
+      this.container.style.position = "relative";
+    }
+
+    this.container.appendChild(this.stats.dom);
+
+    // 🔹 Поднимаем поверх других элементов (canvas, UI и т.д.)
+    this.stats.dom.style.zIndex = "9999";
   }
 
   start(): void {
@@ -67,6 +85,12 @@ export class Game {
     this.stop();
     window.removeEventListener("resize", this.onResize);
     this.renderer.dispose();
+
+    // 🔹 Очистка DOM и сброс ссылки
+    if (this.stats?.dom.parentNode) {
+      this.stats.dom.remove();
+    }
+    this.stats = null;
   }
 
   onUpdate(cb: TickCallback): void {
@@ -107,6 +131,8 @@ export class Game {
       this.camera.lookAt(this.trackedRoot.position.x, 1.0, 0);
     }
 
+    // 🔹 Безопасный вызов (не упадёт, если stats не инициализирован или уже удалён)
+    this.stats?.update();
     this.renderer.render(this.scene, this.camera);
   };
 
