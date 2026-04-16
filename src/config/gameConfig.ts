@@ -71,7 +71,8 @@ const ROOMS: RoomConfig[] = [
       { slotName: "slot_1", itemId: "item_1" },
       { slotName: "slot_2", itemId: "item_4" },
       { slotName: "slot_3", itemId: "item_2" },
-      { slotName: "slot_4", itemId: "item_3" },
+      { slotName: "slot_4", itemId: "item_5" },
+      { slotName: "slot_5", itemId: "item_3" },
     ],
     boundary: { minX: -2, maxX: 2 },
   },
@@ -96,6 +97,10 @@ const ITEMS: ItemConfig[] = [
     id: `item_4`,
     modelPath: `/models/items/1/item_4.glb`,
   },
+  {
+    id: `item_5`,
+    modelPath: `/models/items/1/item_5.glb`,
+  },
 ];
 
 // ─── Per-room env ──────────────────────────────────────────────────────────────
@@ -108,7 +113,7 @@ const ROOM_ENV: Record<number, RoomEnvConfig> = {
 
 // ─── Main config ───────────────────────────────────────────────────────────────
 
-export const GAME_CONFIG: GameConfig = {
+export const GAME_CONFIG = {
   renderer: {
     toneMapping: ACESFilmicToneMapping,
     toneMappingExposure: 1.0,
@@ -117,6 +122,7 @@ export const GAME_CONFIG: GameConfig = {
     shadowMapEnabled: true,
     pixelRatioClamp: 2,
   },
+
   animation: {
     crossFadeDur: 0.25,
     walkThreshold: 0.05,
@@ -124,9 +130,26 @@ export const GAME_CONFIG: GameConfig = {
     decelFactor: 0.88,
   },
   camera: {
-    offset: { x: 0, y: 1.4, z: 4.5 },
-    lerp: 0.08,
+    offset: { x: 0, y: 3.5, z: 6 },
+    lerp: 0.1,
+    fov: {
+      desktop: 50,
+      mobile: 65,
+    },
+
+    aspect: {
+      min: 9 / 16, // чтобы не тянуло вверх
+      max: 1, // максимум квадрат
+    },
+    follow: {
+      lookAtY: 1.0,
+    },
+    zoom: {
+      desktop: 1.0,
+      mobile: 0.4, 
+    },
   },
+
   characters: CHARACTERS,
   rooms: ROOMS,
   items: ITEMS,

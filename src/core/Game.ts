@@ -6,11 +6,10 @@ import {
   AmbientLight,
   PCFSoftShadowMap,
   Object3D,
+  Vector3,
 } from "three";
 import Stats from "stats.js";
 import { GAME_CONFIG } from "../config/gameConfig";
-
-const MAX_SIZE = 640;
 
 type TickCallback = (dt: number) => void;
 
@@ -28,27 +27,42 @@ export class Game {
 
   constructor(container: HTMLElement) {
     this.container = container;
+
     const rc = GAME_CONFIG.renderer;
 
-    this.renderer = new WebGLRenderer({ antialias: rc.antialias });
+    this.renderer = new WebGLRenderer({
+      antialias: rc.antialias,
+    });
+
     this.renderer.setPixelRatio(
       Math.min(window.devicePixelRatio || 1, rc.pixelRatioClamp),
     );
+
     this.renderer.shadowMap.enabled = rc.shadowMapEnabled;
     this.renderer.shadowMap.type = PCFSoftShadowMap;
     this.renderer.toneMapping = rc.toneMapping;
     this.renderer.toneMappingExposure = rc.toneMappingExposure;
     this.renderer.outputColorSpace = rc.outputColorSpace;
+
     container.appendChild(this.renderer.domElement);
 
     this.scene = new Scene();
 
     const { offset } = GAME_CONFIG.camera;
-    this.camera = new PerspectiveCamera(45, 1, 0.01, 100);
+
+    this.camera = new PerspectiveCamera(
+      GAME_CONFIG.camera.fov.desktop,
+      1,
+      0.01,
+      100,
+    );
+
     this.camera.position.set(offset.x, offset.y, offset.z);
+    this.camera.lookAt(0, 0, 0);
 
     this.setupLights();
     this.addStats();
+
     this.onResize();
     window.addEventListener("resize", this.onResize);
   }
@@ -60,15 +74,14 @@ export class Game {
   addStats(): void {
     this.stats = new Stats();
 
-    this.stats.dom.style.transform = 'scale(0.7)';
-    this.stats.dom.style.transformOrigin = 'top left';
+    this.stats.dom.style.transform = "scale(0.7)";
+    this.stats.dom.style.transformOrigin = "top left";
+
     if (getComputedStyle(this.container).position === "static") {
       this.container.style.position = "relative";
     }
 
     this.container.appendChild(this.stats.dom);
-
-    // 🔹 Поднимаем поверх других элементов (canvas, UI и т.д.)
     this.stats.dom.style.zIndex = "9999";
   }
 
@@ -86,7 +99,6 @@ export class Game {
     window.removeEventListener("resize", this.onResize);
     this.renderer.dispose();
 
-    // 🔹 Очистка DOM и сброс ссылки
     if (this.stats?.dom.parentNode) {
       this.stats.dom.remove();
     }
@@ -98,50 +110,108 @@ export class Game {
   }
 
   private setupLights(): void {
-    this.scene.add(new AmbientLight(0xffffff, 1.2));
-    const sun = new DirectionalLight(0xffffff, 1.5);
-    sun.position.set(2, 3, 1);
-    sun.castShadow = true;
-    sun.shadow.bias = -0.0005;
-    sun.shadow.normalBias = 0.05;
-    sun.shadow.radius = 4;
-    sun.shadow.mapSize.set(1024, 1024);
-    Object.assign(sun.shadow.camera, {
-      near: 0.1,
+    const ambient = new AmbientLight(0xffffff, 1.1);
+    this.scene.add(ambient);
+
+    // 🌞 2. Основной свет (сверху-сбоку)
+    const keyLight = new DirectionalLight(0xfff44f, 1.0);
+    keyLight.position.set(0.8, 4, 1);
+
+    keyLight.castShadow = true;
+
+    keyLight.shadow.mapSize.set(1024, 1024);
+    keyLight.shadow.radius = 6;
+
+    keyLight.shadow.bias = -0.0003;
+    keyLight.shadow.normalBias = 0.02;
+
+    const d = 10;
+    Object.assign(keyLight.shadow.camera, {
+      left: -d,
+      right: d,
+      top: d,
+      bottom: -d,
+      near: 0.5,
       far: 40,
-      left: -8,
-      right: 8,
-      top: 8,
-      bottom: -8,
     });
-    this.scene.add(sun);
+
+    this.scene.add(keyLight);
+
+    const fillLight = new DirectionalLight(0xffffff, 1);
+    fillLight.position.set(-2, 2, 3); // спереди
+
+    this.scene.add(fillLight);
+
+    const rimLight = new DirectionalLight(0xffffff, 1.6);
+    rimLight.position.set(0, 2, -5); // сзади
+
+    this.scene.add(rimLight);
   }
 
   private tick = (time: number): void => {
     this.rafId = requestAnimationFrame(this.tick);
+
     const dt = Math.min((time - this.lastTime) / 1000, 0.05);
     this.lastTime = time;
 
     for (const cb of this.updateCallbacks) cb(dt);
 
     if (this.trackedRoot) {
-      const { offset, lerp } = GAME_CONFIG.camera;
-      const tx = this.trackedRoot.position.x + offset.x;
-      this.camera.position.x += (tx - this.camera.position.x) * lerp;
-      this.camera.lookAt(this.trackedRoot.position.x, 1.0, 0);
+      const { offset, lerp, follow, zoom } = GAME_CONFIG.camera;
+
+      const isMobile = this.container.clientWidth < 768;
+      const zoomFactor = isMobile ? zoom.mobile : zoom.desktop;
+
+      const target = this.trackedRoot.position;
+
+      // 🎥 базовое направление камеры
+      const dir = new Vector3(offset.x, offset.y, offset.z).normalize();
+
+      // 🔥 применяем zoom через distance
+      const distance =
+        new Vector3(offset.x, offset.y, offset.z).length() * zoomFactor;
+
+      const desiredPos = target.clone().addScaledVector(dir, distance);
+
+      this.camera.position.lerp(desiredPos, lerp);
+
+      this.camera.lookAt(target.x, follow.lookAtY, target.z);
     }
 
-    // 🔹 Безопасный вызов (не упадёт, если stats не инициализирован или уже удалён)
     this.stats?.update();
     this.renderer.render(this.scene, this.camera);
   };
 
   private onResize = (): void => {
     const rect = this.container.getBoundingClientRect();
-    const w = Math.min(rect.width, MAX_SIZE);
-    const h = Math.min(rect.height, MAX_SIZE);
-    this.camera.aspect = w / h;
+
+    let width = rect.width;
+    let height = rect.height;
+
+    const isMobile = width < 768;
+
+    if (!isMobile) {
+      const size = Math.min(width, height);
+      width = size;
+      height = size;
+    }
+
+    this.camera.fov = isMobile
+      ? GAME_CONFIG.camera.fov.mobile
+      : GAME_CONFIG.camera.fov.desktop;
+
+    const { min, max } = GAME_CONFIG.camera.aspect;
+
+    let aspect = width / height;
+
+    if (aspect < min) aspect = min;
+    if (aspect > max) aspect = max;
+
+    this.camera.aspect = aspect;
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(w, h);
+
+    this.renderer.setSize(width, height);
+
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   };
 }

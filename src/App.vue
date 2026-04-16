@@ -14,7 +14,9 @@
     <template v-if="!store.isLoading">
       <div class="top-bar">
         <!-- <span>Комната {{ store.currentRoom }} / {{ store.totalRooms }}</span> -->
-        <span class="time-badge">Время загрузки сцены: {{ store.loadTime.toFixed(1) }}с</span>
+        <span class="time-badge"
+          >Время загрузки сцены: {{ store.loadTime.toFixed(1) }}с</span
+        >
       </div>
 
       <!-- <div class="controls">
@@ -78,32 +80,44 @@ body {
 
 #app {
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
 }
 
-/* Внешний контейнер — центрирует и ограничивает */
 .canvas-outer {
-  position: relative;
-  width: min(100vw, 100vh, 720px);
-  height: min(100vw, 100vh, 720px);
-  max-width: 720px;
-  max-height: 720px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-/* Внутренний — сюда Three.js вставляет canvas */
+/* 📱 mobile */
+@media (max-width: 767px) {
+  .canvas-outer {
+    width: 100vw;
+    height: 100dvh;
+  }
+}
+
+/* 🖥 desktop */
+@media (min-width: 768px) {
+  .canvas-outer {
+    width: min(100vw, 100vh, 720px);
+    height: min(100vw, 100vh, 720px);
+  }
+}
+
 .canvas-wrap {
   width: 100%;
   height: 100%;
 }
 
 .canvas-wrap canvas {
+  width: 100%;
+  height: 100%;
   display: block;
-  width: 100% !important;
-  height: 100% !important;
 }
 
 .top-bar {
