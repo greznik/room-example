@@ -3,7 +3,7 @@ import {
   Scene,
   PerspectiveCamera,
   DirectionalLight,
-  AmbientLight,
+  // AmbientLight,
   PCFSoftShadowMap,
   Object3D,
   Vector3,
@@ -110,7 +110,7 @@ export class Game {
   }
 
   private setupLights(): void {
-    const ambient = new AmbientLight(0xffffff, 1.4);
+    // const ambient = new AmbientLight(0xffffff, 1.4);
     // this.scene.add(ambient);
 
     // Основной свет
