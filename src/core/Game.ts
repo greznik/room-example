@@ -110,11 +110,11 @@ export class Game {
   }
 
   private setupLights(): void {
-    const ambient = new AmbientLight(0xffffff, 0.5);
+    const ambient = new AmbientLight(0xffffff, 0.1);
     this.scene.add(ambient);
 
     // Основной свет
-    const keyLight = new DirectionalLight(0xffffff, 1.5);
+    const keyLight = new DirectionalLight(0xffffff, 0.5);
     keyLight.position.set(0.8, 4, 1);
 
     keyLight.castShadow = true;
