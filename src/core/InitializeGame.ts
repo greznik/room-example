@@ -38,7 +38,8 @@ export class GameInitializer {
     this.player = new Player(this.game.scene, this.loader);
 
     const firstRoom = GAME_CONFIG.rooms[0];
-    await this.loader.preloadBatch([
+    const char = GAME_CONFIG.characters[0]
+    char ?? await this.loader.preloadBatch([
       firstRoom.modelPath,
       GAME_CONFIG.characters[0].modelPath,
     ]);

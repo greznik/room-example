@@ -107,7 +107,7 @@ const ITEMS: ItemConfig[] = [
 
 const ROOM_ENV: Record<number, RoomEnvConfig> = {
   1: {
-    envMapUrl: "",
+    envMapUrl: "/environmentMaps/4.hdr",
   },
 };
 

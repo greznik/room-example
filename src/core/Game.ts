@@ -110,11 +110,11 @@ export class Game {
   }
 
   private setupLights(): void {
-    const ambient = new AmbientLight(0xffffff, 1.1);
-    this.scene.add(ambient);
+    const ambient = new AmbientLight(0xffffff, 1.4);
+    // this.scene.add(ambient);
 
-    // 🌞 2. Основной свет (сверху-сбоку)
-    const keyLight = new DirectionalLight(0xfff44f, 1.0);
+    // Основной свет
+    const keyLight = new DirectionalLight(0xffffff, 1.5);
     keyLight.position.set(0.8, 4, 1);
 
     keyLight.castShadow = true;
@@ -135,17 +135,18 @@ export class Game {
       far: 40,
     });
 
-    this.scene.add(keyLight);
-
+    // this.scene.add(keyLight);
+    // спереди
     const fillLight = new DirectionalLight(0xffffff, 1);
-    fillLight.position.set(-2, 2, 3); // спереди
+    fillLight.position.set(-2, 2, 3);
 
-    this.scene.add(fillLight);
+    // this.scene.add(fillLight);
 
+    // сзади
     const rimLight = new DirectionalLight(0xffffff, 1.6);
-    rimLight.position.set(0, 2, -5); // сзади
+    rimLight.position.set(0, 2, -5);
 
-    this.scene.add(rimLight);
+    // this.scene.add(rimLight);
   }
 
   private tick = (time: number): void => {
