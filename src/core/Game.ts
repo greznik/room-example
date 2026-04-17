@@ -3,7 +3,7 @@ import {
   Scene,
   PerspectiveCamera,
   DirectionalLight,
-  // AmbientLight,
+  AmbientLight,
   PCFSoftShadowMap,
   Object3D,
   Vector3,
@@ -110,8 +110,8 @@ export class Game {
   }
 
   private setupLights(): void {
-    // const ambient = new AmbientLight(0xffffff, 1.4);
-    // this.scene.add(ambient);
+    const ambient = new AmbientLight(0xffffff, 0.5);
+    this.scene.add(ambient);
 
     // Основной свет
     const keyLight = new DirectionalLight(0xffffff, 1.5);
@@ -135,7 +135,7 @@ export class Game {
       far: 40,
     });
 
-    // this.scene.add(keyLight);
+    this.scene.add(keyLight);
     // спереди
     const fillLight = new DirectionalLight(0xffffff, 1);
     fillLight.position.set(-2, 2, 3);
