@@ -1,25 +1,15 @@
+/**
+ * gameConfig.ts
+ *
+ * Глобальные настройки рендерера, камеры, анимации, персонажей и предметов.
+ * Конфигурация комнат (включая освещение) — в roomsConfig.ts.
+ */
+
 import { ACESFilmicToneMapping, SRGBColorSpace } from "three";
 import type { ToneMapping } from "three";
-import type { CharacterConfig, RoomConfig, ItemConfig } from "../types";
+import type { CharacterConfig, ItemConfig } from "../types";
 
 // ─── Interfaces ────────────────────────────────────────────────────────────────
-
-export interface LightConfig {
-  type: "ambient" | "directional" | "point" | "spot";
-  color: number;
-  intensity: number;
-  position?: [number, number, number];
-  castShadow?: boolean;
-}
-
-export interface SlotConfig {
-  name: string;
-  envMapUrl?: string;
-}
-
-export interface RoomEnvConfig {
-  envMapUrl: string;
-}
 
 export interface RendererConfig {
   toneMapping: ToneMapping;
@@ -37,16 +27,22 @@ export interface AnimationConfig {
   decelFactor: number;
 }
 
+export interface CameraConfig {
+  offset: { x: number; y: number; z: number };
+  lerp: number;
+  fov: { desktop: number; mobile: number };
+  aspect: { min: number; max: number };
+  follow: { lookAtY: number };
+  zoom: { desktop: number; mobile: number };
+}
+
 export interface GameConfig {
   renderer: RendererConfig;
   animation: AnimationConfig;
-  camera: { offset: { x: number; y: number; z: number }; lerp: number };
+  camera: CameraConfig;
   characters: CharacterConfig[];
-  rooms: RoomConfig[];
   items: ItemConfig[];
   itemsPerRoom: number;
-  roomEnvMap: Record<number, RoomEnvConfig>;
-  defaultEnvMapUrl: string;
 }
 
 // ─── Characters ────────────────────────────────────────────────────────────────
@@ -61,59 +57,19 @@ const CHARACTERS: CharacterConfig[] = [
   },
 ];
 
-// ─── Rooms ─────────────────────────────────────────────────────────────────────
-
-const ROOMS: RoomConfig[] = [
-  {
-    id: 1,
-    modelPath: "/models/rooms/room_1.glb",
-    assignments: [
-      { slotName: "slot_1", itemId: "item_1" },
-      { slotName: "slot_2", itemId: "item_4" },
-      { slotName: "slot_3", itemId: "item_2" },
-      { slotName: "slot_4", itemId: "item_5" },
-      { slotName: "slot_5", itemId: "item_3" },
-    ],
-    boundary: { minX: -2, maxX: 2 },
-  },
-];
-
 // ─── Items ─────────────────────────────────────────────────────────────────────
 
 const ITEMS: ItemConfig[] = [
-  {
-    id: `item_1`,
-    modelPath: `/models/items/1/item_1.glb`,
-  },
-  {
-    id: `item_2`,
-    modelPath: `/models/items/1/item_2.glb`,
-  },
-  {
-    id: `item_3`,
-    modelPath: `/models/items/1/item_3.glb`,
-  },
-  {
-    id: `item_4`,
-    modelPath: `/models/items/1/item_4.glb`,
-  },
-  {
-    id: `item_5`,
-    modelPath: `/models/items/1/item_5.glb`,
-  },
+  { id: "item_1", modelPath: "/models/items/1/item_1.glb" },
+  { id: "item_2", modelPath: "/models/items/1/item_2.glb" },
+  { id: "item_3", modelPath: "/models/items/1/item_3.glb" },
+  { id: "item_4", modelPath: "/models/items/1/item_4.glb" },
+  { id: "item_5", modelPath: "/models/items/1/item_5.glb" },
 ];
-
-// ─── Per-room env ──────────────────────────────────────────────────────────────
-
-const ROOM_ENV: Record<number, RoomEnvConfig> = {
-  1: {
-    envMapUrl: "/environmentMaps/8.hdr",
-  },
-};
 
 // ─── Main config ───────────────────────────────────────────────────────────────
 
-export const GAME_CONFIG = {
+export const GAME_CONFIG: GameConfig = {
   renderer: {
     toneMapping: ACESFilmicToneMapping,
     toneMappingExposure: 1.0,
@@ -129,6 +85,7 @@ export const GAME_CONFIG = {
     rotateSpeed: 8,
     decelFactor: 0.88,
   },
+
   camera: {
     offset: { x: 0, y: 3.5, z: 6 },
     lerp: 0.1,
@@ -136,24 +93,20 @@ export const GAME_CONFIG = {
       desktop: 50,
       mobile: 65,
     },
-
     aspect: {
-      min: 9 / 16, // чтобы не тянуло вверх
-      max: 1, // максимум квадрат
+      min: 9 / 16,
+      max: 1,
     },
     follow: {
       lookAtY: 1.0,
     },
     zoom: {
       desktop: 1.0,
-      mobile: 0.4, 
+      mobile: 0.4,
     },
   },
 
   characters: CHARACTERS,
-  rooms: ROOMS,
   items: ITEMS,
   itemsPerRoom: 5,
-  roomEnvMap: ROOM_ENV,
-  defaultEnvMapUrl: "",
 };

@@ -1,3 +1,10 @@
+/**
+ * types/index.ts
+ *
+ * Базовые типы проекта.
+ * Типы освещения (SpotLightDef, RoomLightingConfig и т.д.) — в config/roomsConfig.ts.
+ */
+
 import type { Object3D } from "three";
 
 export interface Boundary {
@@ -23,10 +30,11 @@ export interface SlotAssignment {
   itemId: string;
 }
 
+/** Базовый конфиг комнаты без освещения. Полный конфиг — RoomFullConfig в roomsConfig.ts */
 export interface RoomConfig {
   id: number;
   modelPath: string;
-  assignments: SlotAssignment[]; // слоты + что в них стоит
+  assignments: SlotAssignment[];
   boundary: Boundary;
 }
 

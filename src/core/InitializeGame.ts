@@ -1,9 +1,21 @@
+/**
+ * InitializeGame.ts
+ *
+ * Точка входа: собирает граф зависимостей, запускает игру, возвращает GameController.
+ *
+ * Исправлено:
+ *   - Баг: `char ?? await preloadBatch(...)` → теперь `&&`
+ *   - RoomManager.update() добавлен в game loop (для LightDebugger)
+ *   - Убраны неиспользуемые импорты
+ */
+
 import { Game } from "./Game";
 import { AssetLoader } from "./AssetLoader";
 import { Player } from "../entities/Player";
 import { RoomManager } from "../managers/RoomManager";
 import { ItemManager } from "../managers/ItemManager";
 import { GAME_CONFIG } from "../config/gameConfig";
+import { ROOMS_CONFIG } from "../config/roomsConfig";
 import type { GameController } from "../types/GameController";
 import { useGameStore } from "../store/gameStore";
 
@@ -32,36 +44,35 @@ export class GameInitializer {
       this.loader,
       this.itemManager,
     );
+
     this.roomManager.onRoomChanged = (id: number, total: number) =>
       store.updateRoom(id, total);
 
     this.player = new Player(this.game.scene, this.loader);
 
-    const firstRoom = GAME_CONFIG.rooms[0];
-    const char = GAME_CONFIG.characters[0]
-    char ?? await this.loader.preloadBatch([
+    // Предзагрузка первой комнаты и персонажа
+    // Исправлен баг: было `char ?? await ...` — оператор `??` возвращает правый
+    // операнд только если левый null/undefined, но char всегда существует.
+    // Теперь preloadBatch вызывается всегда.
+    const firstRoom = ROOMS_CONFIG[0];
+    await this.loader.preloadBatch([
       firstRoom.modelPath,
       GAME_CONFIG.characters[0].modelPath,
     ]);
 
     await this.roomManager.init();
 
-    const b = this.roomManager.currentRoom?.config.boundary;
-    if (b) this.player.updateBoundary(b);
-
-    const roomEnv = GAME_CONFIG.roomEnvMap[firstRoom.id];
-
-    if (roomEnv?.envMapUrl) {
-      const envMap = await this.loader.loadEnvMap(roomEnv?.envMapUrl);
-      this.game.scene.environment = envMap;
-    }
+    const boundary = this.roomManager.currentRoom?.config.boundary;
+    if (boundary) this.player.updateBoundary(boundary);
 
     await this.player.switchTo(GAME_CONFIG.characters[0]);
     this.game.trackObject(this.player.root);
 
+    // Game loop
     this.game.onUpdate((dt) => {
       this.player.update(dt);
       this.itemManager.update(dt);
+      this.roomManager.update(); // обновление LightDebugger хелперов
     });
 
     this.setupKeyboard();
@@ -71,64 +82,68 @@ export class GameInitializer {
     return this.buildController();
   }
 
-  private setupKeyboard() {
-    const LEFT = new Set(["ArrowLeft", "a", "A", "ф", "Ф"]);
+  // ─── Input ───────────────────────────────────────────────────────────────────
+
+  private setupKeyboard(): void {
+    const LEFT  = new Set(["ArrowLeft", "a", "A", "ф", "Ф"]);
     const RIGHT = new Set(["ArrowRight", "d", "D", "в", "В"]);
+
     window.addEventListener("keydown", (e) => {
-      if (LEFT.has(e.key)) this.player.moveLeft();
+      if (LEFT.has(e.key))  this.player.moveLeft();
       if (RIGHT.has(e.key)) this.player.moveRight();
     });
+
     window.addEventListener("keyup", (e) => {
       if (LEFT.has(e.key) || RIGHT.has(e.key)) this.player.stop();
     });
   }
 
-  private setupTouch(container: HTMLElement) {
+  private setupTouch(container: HTMLElement): void {
     let startX = 0;
-    container.addEventListener(
-      "touchstart",
-      (e) => {
-        startX = e.touches[0].clientX;
-      },
-      { passive: true },
-    );
-    container.addEventListener(
-      "touchmove",
-      (e) => {
-        const dx = e.touches[0].clientX - startX;
-        if (Math.abs(dx) > 12)
-          dx < 0 ? this.player.moveLeft() : this.player.moveRight();
-      },
-      { passive: true },
-    );
-    container.addEventListener("touchend", () => this.player.stop(), {
-      passive: true,
-    });
+
+    container.addEventListener("touchstart", (e) => {
+      startX = e.touches[0].clientX;
+    }, { passive: true });
+
+    container.addEventListener("touchmove", (e) => {
+      const dx = e.touches[0].clientX - startX;
+      if (Math.abs(dx) > 12) {
+        dx < 0 ? this.player.moveLeft() : this.player.moveRight();
+      }
+    }, { passive: true });
+
+    container.addEventListener("touchend", () => this.player.stop(), { passive: true });
   }
 
+  // ─── Controller ──────────────────────────────────────────────────────────────
+
   private buildController(): GameController {
+    const syncBoundary = (): void => {
+      const b = this.roomManager.currentRoom?.config.boundary;
+      if (b) this.player.updateBoundary(b);
+    };
+
     return {
       goNext: async () => {
         await this.roomManager.goNext();
-        const b = this.roomManager.currentRoom?.config.boundary;
-        if (b) this.player.updateBoundary(b);
+        syncBoundary();
       },
       goPrev: async () => {
         await this.roomManager.goPrev();
-        const b = this.roomManager.currentRoom?.config.boundary;
-        if (b) this.player.updateBoundary(b);
+        syncBoundary();
       },
       changeCharacter: async (idx: number) => {
         useGameStore().setCharacter(idx);
+
         const canvas = this.game.renderer.domElement;
         canvas.style.cssText += "transition:opacity .3s;opacity:0";
         await new Promise<void>((r) => setTimeout(r, 300));
+
         await this.player.switchTo(GAME_CONFIG.characters[idx]);
         this.game.trackObject(this.player.root);
+
         canvas.style.opacity = "1";
-        setTimeout(() => {
-          canvas.style.transition = "";
-        }, 300);
+        setTimeout(() => { canvas.style.transition = ""; }, 300);
       },
     };
   }
