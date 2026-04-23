@@ -23,7 +23,6 @@ import {
   SpotLightHelper,
   PointLight,
   PointLightHelper,
-  type Light,
 } from "three";
 import type { SceneLights } from "../core/LightingSystem";
 
