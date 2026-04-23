@@ -36,9 +36,7 @@ export class RoomManager {
     this.itemManager = itemManager;
     this.lightingSystem = new LightingSystem(scene);
 
-    this.lightDebugger = import.meta.env.DEV
-      ? new LightDebugger(scene)
-      : null;
+    this.lightDebugger = new LightDebugger(scene)
   }
 
   get currentRoom(): Room | null { return this.room; }

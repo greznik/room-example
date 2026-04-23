@@ -11,7 +11,7 @@ import { ROOMS_CONFIG } from "../config/roomsConfig";
 
 export const useGameStore = defineStore("game", () => {
   const currentRoom       = ref(1);
-  const totalRooms        = ref(ROOMS_CONFIG.length); // ← было 20 (хардкод)
+  const totalRooms        = ref(ROOMS_CONFIG.length); 
   const selectedCharacter = ref(0);
   const isLoading         = ref(true);
   const loadTime          = ref(0);
