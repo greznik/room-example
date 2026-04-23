@@ -39,7 +39,9 @@ export class Game {
     const rc = GAME_CONFIG.renderer;
 
     this.renderer = new WebGLRenderer({ antialias: rc.antialias });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, rc.pixelRatioClamp));
+    this.renderer.setPixelRatio(
+      Math.min(window.devicePixelRatio || 1, rc.pixelRatioClamp),
+    );
     this.renderer.shadowMap.enabled = rc.shadowMapEnabled;
     this.renderer.shadowMap.type = PCFSoftShadowMap;
     this.renderer.toneMapping = rc.toneMapping;
@@ -55,9 +57,7 @@ export class Game {
     this.camera.position.set(offset.x, offset.y, offset.z);
     this.camera.lookAt(0, 0, 0);
 
-    if (import.meta.env.DEV) {
-      this.addStats();
-    }
+    this.addStats();
 
     this.onResize();
     window.addEventListener("resize", this.onResize);
@@ -137,7 +137,8 @@ export class Game {
   }
 
   private onResize = (): void => {
-    const { width: rawW, height: rawH } = this.container.getBoundingClientRect();
+    const { width: rawW, height: rawH } =
+      this.container.getBoundingClientRect();
     const mobile = rawW < MOBILE_BREAKPOINT;
 
     let width = rawW;
