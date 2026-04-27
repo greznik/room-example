@@ -50,10 +50,6 @@ export class GameInitializer {
 
     this.player = new Player(this.game.scene, this.loader);
 
-    // Предзагрузка первой комнаты и персонажа
-    // Исправлен баг: было `char ?? await ...` — оператор `??` возвращает правый
-    // операнд только если левый null/undefined, но char всегда существует.
-    // Теперь preloadBatch вызывается всегда.
     const firstRoom = ROOMS_CONFIG[0];
     await this.loader.preloadBatch([
       firstRoom.modelPath,
@@ -85,11 +81,11 @@ export class GameInitializer {
   // ─── Input ───────────────────────────────────────────────────────────────────
 
   private setupKeyboard(): void {
-    const LEFT  = new Set(["ArrowLeft", "a", "A", "ф", "Ф"]);
+    const LEFT = new Set(["ArrowLeft", "a", "A", "ф", "Ф"]);
     const RIGHT = new Set(["ArrowRight", "d", "D", "в", "В"]);
 
     window.addEventListener("keydown", (e) => {
-      if (LEFT.has(e.key))  this.player.moveLeft();
+      if (LEFT.has(e.key)) this.player.moveLeft();
       if (RIGHT.has(e.key)) this.player.moveRight();
     });
 
@@ -101,18 +97,28 @@ export class GameInitializer {
   private setupTouch(container: HTMLElement): void {
     let startX = 0;
 
-    container.addEventListener("touchstart", (e) => {
-      startX = e.touches[0].clientX;
-    }, { passive: true });
+    container.addEventListener(
+      "touchstart",
+      (e) => {
+        startX = e.touches[0].clientX;
+      },
+      { passive: true },
+    );
 
-    container.addEventListener("touchmove", (e) => {
-      const dx = e.touches[0].clientX - startX;
-      if (Math.abs(dx) > 12) {
-        dx < 0 ? this.player.moveLeft() : this.player.moveRight();
-      }
-    }, { passive: true });
+    container.addEventListener(
+      "touchmove",
+      (e) => {
+        const dx = e.touches[0].clientX - startX;
+        if (Math.abs(dx) > 12) {
+          dx < 0 ? this.player.moveLeft() : this.player.moveRight();
+        }
+      },
+      { passive: true },
+    );
 
-    container.addEventListener("touchend", () => this.player.stop(), { passive: true });
+    container.addEventListener("touchend", () => this.player.stop(), {
+      passive: true,
+    });
   }
 
   // ─── Controller ──────────────────────────────────────────────────────────────
@@ -143,7 +149,9 @@ export class GameInitializer {
         this.game.trackObject(this.player.root);
 
         canvas.style.opacity = "1";
-        setTimeout(() => { canvas.style.transition = ""; }, 300);
+        setTimeout(() => {
+          canvas.style.transition = "";
+        }, 300);
       },
     };
   }

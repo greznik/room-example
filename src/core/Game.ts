@@ -16,6 +16,7 @@ import {
 } from "three";
 import Stats from "stats.js";
 import { GAME_CONFIG } from "../config/gameConfig";
+import { AssetLoader } from "./AssetLoader";
 
 type TickCallback = (dt: number) => void;
 
@@ -82,6 +83,7 @@ export class Game {
 
   dispose(): void {
     this.stop();
+    AssetLoader.reset()
     window.removeEventListener("resize", this.onResize);
     this.renderer.dispose();
     this.stats?.dom.remove();
@@ -120,19 +122,21 @@ export class Game {
     this.renderer.render(this.scene, this.camera);
   };
 
-  private updateCamera(): void {
-    if (!this.trackedRoot) return;
+  private readonly _offsetVec = new Vector3();
+  private readonly _desiredPos = new Vector3();
 
+  private updateCamera(): void {
     const { offset, lerp, follow, zoom } = GAME_CONFIG.camera;
     const zoomFactor = this.isMobile() ? zoom.mobile : zoom.desktop;
-    const target = this.trackedRoot.position;
+    const target = this.trackedRoot!.position;
 
-    const offsetVec = new Vector3(offset.x, offset.y, offset.z);
-    const dir = offsetVec.clone().normalize();
-    const distance = offsetVec.length() * zoomFactor;
+    this._offsetVec.set(offset.x, offset.y, offset.z);
+    const distance = this._offsetVec.length() * zoomFactor;
+    this._offsetVec.normalize();
 
-    const desiredPos = target.clone().addScaledVector(dir, distance);
-    this.camera.position.lerp(desiredPos, lerp);
+    this._desiredPos.copy(target).addScaledVector(this._offsetVec, distance);
+
+    this.camera.position.lerp(this._desiredPos, lerp);
     this.camera.lookAt(target.x, follow.lookAtY, target.z);
   }
 

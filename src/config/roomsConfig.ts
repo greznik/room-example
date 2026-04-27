@@ -108,7 +108,7 @@ export const ROOMS_CONFIG: RoomFullConfig[] = [
           label: "Hemisphere",
           skyColor: "#ffffff",
           groundColor: "#080820",
-          intensity: 3,
+          intensity: 3.5,
           enabled: true,
         },
       ],
@@ -116,15 +116,15 @@ export const ROOMS_CONFIG: RoomFullConfig[] = [
         {
           label: "Directional Light",
           color: "#ffffff",
-          intensity: 0.5,
-          position: [0.8, 4, 1],
-          target: [0, 0, 0],
+          intensity: 3,
+          position: [1, 2.1, 1.6],
+          target: [0.5, -8.7, 1],
           enabled: true,
           castShadow: true,
           shadowMapSize: 1024,
-          shadowBias: -0.0003,
-          shadowNormalBias: 0.02,
-          shadowCameraSize: 10,
+          shadowBias: -0.0004,
+          shadowNormalBias: 0.04,
+          shadowCameraSize: 5,
         },
       ],
       spot: [
@@ -156,7 +156,6 @@ export const ROOMS_CONFIG: RoomFullConfig[] = [
         },
       ],
       point: [
-        // Пример точечного — выключен по умолчанию
         {
           label: "Point Light",
           color: "#ffffff",
@@ -171,55 +170,4 @@ export const ROOMS_CONFIG: RoomFullConfig[] = [
       envMapUrl: "",
     },
   },
-
-  // ── Пример комнаты 2 ─────────────────────────────────────────────────────────
-  // {
-  //   id: 2,
-  //   modelPath: "/models/rooms/room_2.glb",
-  //   boundary: { minX: -3, maxX: 3 },
-  //   assignments: [],
-  //   lighting: {
-  //     ambient: [{ label: "Ambient", color: "#112233", intensity: 0.5, enabled: true }],
-  //     hemisphere: [],
-  //     directional: [
-  //       {
-  //         label: "Moon",
-  //         color: "#aaccff",
-  //         intensity: 0.8,
-  //         position: [-5, 10, -3],
-  //         target: [0, 0, 0],
-  //         enabled: true,
-  //         castShadow: false,
-  //       },
-  //     ],
-  //     spot: [
-  //       {
-  //         label: "🔵 Cold fill",
-  //         color: "#88ccff",
-  //         intensity: 4,
-  //         position: [0, 8, 0],
-  //         target: [0, 0, 0],
-  //         angle: Math.PI / 4,
-  //         penumbra: 0.6,
-  //         decay: 2,
-  //         distance: 30,
-  //         enabled: true,
-  //         castShadow: true,
-  //       },
-  //     ],
-  //     point: [
-  //       {
-  //         label: "🔴 Fill point",
-  //         color: "#ff4422",
-  //         intensity: 2,
-  //         position: [1, 2, 1],
-  //         distance: 8,
-  //         decay: 2,
-  //         enabled: true,
-  //         castShadow: false,
-  //       },
-  //     ],
-  //     envMapUrl: "/env/studio.hdr",
-  //   },
-  // },
 ];

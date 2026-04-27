@@ -45,7 +45,7 @@ export class LightDebugger {
   attach(lights: SceneLights, roomLabel: string): void {
     this.detach();
 
-    this.gui = new GUI({ title: `💡 Lights — ${roomLabel}` });
+    this.gui = new GUI({ title: `Lights ${roomLabel}`, closeFolders: true }).close();
 
     for (const l of lights.ambient) this.addAmbient(l);
     for (const l of lights.hemisphere) this.addHemisphere(l);
@@ -75,10 +75,14 @@ export class LightDebugger {
     this.detach();
   }
 
+  private addFolder(name: string): GUI {
+    return this.gui!.addFolder(name).close();
+  }
+
   // ─── AmbientLight ─────────────────────────────────────────────────────────────
 
   private addAmbient(light: AmbientLight): void {
-    const folder = this.gui!.addFolder(`◻ ${light.name}`);
+    const folder = this.addFolder(light.name);
     folder.add(light, "visible").name("enabled");
     this.addColorControl(folder, light);
     folder.add(light, "intensity", 0, 10, 0.01).name("intensity");
@@ -92,7 +96,7 @@ export class LightDebugger {
   // ─── HemisphereLight ──────────────────────────────────────────────────────────
 
   private addHemisphere(light: HemisphereLight): void {
-    const folder = this.gui!.addFolder(`🌐 ${light.name}`);
+    const folder = this.addFolder(light.name);
     folder.add(light, "visible").name("enabled");
     folder.add(light, "intensity", 0, 10, 0.01).name("intensity");
 
@@ -119,11 +123,11 @@ export class LightDebugger {
   // ─── DirectionalLight ─────────────────────────────────────────────────────────
 
   private addDirectional(light: DirectionalLight): void {
-    const helper = new DirectionalLightHelper(light, 1);
+    const helper = new DirectionalLightHelper(light, 0.5);
     this.scene.add(helper);
     this.helpers.push(helper);
 
-    const folder = this.gui!.addFolder(`☀ ${light.name}`);
+    const folder = this.addFolder(light.name);
 
     folder
       .add(light, "visible")
@@ -177,7 +181,7 @@ export class LightDebugger {
     this.scene.add(helper);
     this.helpers.push(helper);
 
-    const folder = this.gui!.addFolder(`🔦 ${light.name}`);
+    const folder = this.addFolder(light.name);
 
     folder
       .add(light, "visible")
@@ -239,7 +243,7 @@ export class LightDebugger {
     this.scene.add(helper);
     this.helpers.push(helper);
 
-    const folder = this.gui!.addFolder(`💡 ${light.name}`);
+    const folder = this.addFolder(light.name);
 
     folder
       .add(light, "visible")
@@ -294,9 +298,8 @@ export class LightDebugger {
    *     поэтому выносим его отдельно с пометкой «требует перезагрузки».
    */
   private addShadowControls(folder: GUI, light: ShadowLight): void {
-    const shadowFolder = folder.addFolder("🌑 shadows");
+    const shadowFolder = folder.addFolder("shadows");
 
-    // castShadow toggle
     shadowFolder
       .add(light, "castShadow")
       .name("castShadow")
@@ -346,8 +349,6 @@ export class LightDebugger {
     shadowFolder.close();
   }
 
-  // ─── Shared helpers ───────────────────────────────────────────────────────────
-
   private addColorControl(
     folder: GUI,
     light: { color: { getHexString(): string; set(v: string): void } },
@@ -366,6 +367,6 @@ export class LightDebugger {
   ): void {
     folder
       .add({ log: () => console.log(`[Light] ${label}`, getData()) }, "log")
-      .name("📋 Log to console");
+      .name("Log to console");
   }
 }

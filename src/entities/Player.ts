@@ -75,7 +75,9 @@ export class Player {
     }
 
     // Анимация
-    this.animMgr.play(Math.abs(this.velocityX) > walkThreshold ? "walk" : "idle");
+    this.animMgr.play(
+      Math.abs(this.velocityX) > walkThreshold ? "walk" : "idle",
+    );
 
     // Поворот
     if (this.targetDir !== 0) {
@@ -87,7 +89,11 @@ export class Player {
 
     // Позиция
     const nextX = this.root.position.x + this.velocityX * dt;
-    this.root.position.x = MathUtils.clamp(nextX, this.boundary.minX, this.boundary.maxX);
+    this.root.position.x = MathUtils.clamp(
+      nextX,
+      this.boundary.minX,
+      this.boundary.maxX,
+    );
 
     if (
       this.root.position.x <= this.boundary.minX ||
@@ -99,9 +105,15 @@ export class Player {
     this.animMgr.update(dt);
   }
 
-  moveLeft(): void  { this.targetDir = -1; }
-  moveRight(): void { this.targetDir = 1; }
-  stop(): void      { this.targetDir = 0; }
+  moveLeft(): void {
+    this.targetDir = -1;
+  }
+  moveRight(): void {
+    this.targetDir = 1;
+  }
+  stop(): void {
+    this.targetDir = 0;
+  }
 
   updateBoundary(b: Boundary): void {
     this.boundary = b;

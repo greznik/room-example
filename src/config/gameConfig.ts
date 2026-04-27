@@ -53,7 +53,7 @@ const CHARACTERS: CharacterConfig[] = [
     name: "Кибер",
     modelPath: "/models/characters/char_1.glb",
     speed: 2.0,
-    animations: { idle: "IK_arm_LAction", walk: "IK_arm_LAction" },
+    animations: { idle: "Idle", walk: "Walk" },
   },
 ];
 

@@ -36,15 +36,26 @@ export class RoomManager {
     this.itemManager = itemManager;
     this.lightingSystem = new LightingSystem(scene);
 
-    this.lightDebugger = new LightDebugger(scene)
+    this.lightDebugger = new LightDebugger(scene);
   }
 
-  get currentRoom(): Room | null { return this.room; }
-  get totalRooms(): number       { return ROOMS_CONFIG.length; }
+  get currentRoom(): Room | null {
+    return this.room;
+  }
+  get totalRooms(): number {
+    return ROOMS_CONFIG.length;
+  }
 
-  async init(): Promise<void>    { await this.loadRoom(0); }
-  async goNext(): Promise<void>  { await this.loadRoom((this.idx + 1) % this.totalRooms); }
-  async goPrev(): Promise<void>  { await this.loadRoom((this.idx - 1 + this.totalRooms) % this.totalRooms); }
+  async init(): Promise<void> {
+    await this.loadRoom(0);
+  }
+  async goNext(): Promise<void> {
+    if (this.isLoading) return;
+    await this.loadRoom((this.idx + 1) % this.totalRooms);
+  }
+  async goPrev(): Promise<void> {
+    await this.loadRoom((this.idx - 1 + this.totalRooms) % this.totalRooms);
+  }
 
   /** Вызывать каждый кадр — обновляет визуальные хелперы в DEV. */
   update(): void {
@@ -57,40 +68,46 @@ export class RoomManager {
   }
 
   // ─── Private ─────────────────────────────────────────────────────────────────
+  private isLoading = false;
 
   private async loadRoom(index: number): Promise<void> {
-    if (this.room) {
-      this.itemManager.clearActiveItems();
-      this.room.removeFromScene();
+    this.isLoading = true;
+    try {
+      if (this.room) {
+        this.itemManager.clearActiveItems();
+        this.room.removeFromScene();
+      }
+
+      const config = ROOMS_CONFIG[index];
+      const group = await this.loader.load(config.modelPath);
+
+      this.room = new Room(config, group);
+      this.room.addToScene(this.scene);
+      this.idx = index;
+
+      // 1. Освещение
+      const lights = this.lightingSystem.applyRoomLighting(config.lighting);
+
+      // 2. Debug GUI — пересоздаётся для каждой комнаты
+      this.lightDebugger?.attach(lights, `Комната ${config.id}`);
+
+      // 3. Env map
+      if (config.lighting.envMapUrl) {
+        const envMap = await this.loader.loadEnvMap(config.lighting.envMapUrl);
+        this.scene.environment = envMap;
+      } else {
+        this.scene.environment = null;
+      }
+
+      // 4. Предметы
+      await this.itemManager.populateRoom(this.room);
+      this.itemManager.spawnAll();
+
+      this.onRoomChanged?.(config.id, this.totalRooms);
+      this.prefetchNeighbors(index);
+    } finally {
+      this.isLoading = false;
     }
-
-    const config = ROOMS_CONFIG[index];
-    const group  = await this.loader.load(config.modelPath);
-
-    this.room = new Room(config, group);
-    this.room.addToScene(this.scene);
-    this.idx = index;
-
-    // 1. Освещение
-    const lights = this.lightingSystem.applyRoomLighting(config.lighting);
-
-    // 2. Debug GUI — пересоздаётся для каждой комнаты
-    this.lightDebugger?.attach(lights, `Комната ${config.id}`);
-
-    // 3. Env map
-    if (config.lighting.envMapUrl) {
-      const envMap = await this.loader.loadEnvMap(config.lighting.envMapUrl);
-      this.scene.environment = envMap;
-    } else {
-      this.scene.environment = null;
-    }
-
-    // 4. Предметы
-    await this.itemManager.populateRoom(this.room);
-    this.itemManager.spawnAll();
-
-    this.onRoomChanged?.(config.id, this.totalRooms);
-    this.prefetchNeighbors(index);
   }
 
   private prefetchNeighbors(current: number): void {
