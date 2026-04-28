@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Particle Morph</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160/build/three.module.js",
+          "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.160/examples/jsm/"
+        }
+      }
+    </script>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #000;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module">
+      import * as THREE from "three";
+      import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+      import gsap from "https://cdn.jsdelivr.net/npm/gsap@3.12.5/index.js";
+
+      let scene = new THREE.Scene();
+      let camera = new THREE.PerspectiveCamera(
+        60,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000,
+      );
+      camera.position.z = 5;
+
+      let renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      const loader = new GLTFLoader();
+
+      let model1Positions = null;
+      let model2Positions = null;
+      let particleSystem;
+      let uniforms;
+
+      // === MOCK PATHS ===
+      const MODEL_1_PATH = "/characters/char_1.glb";
+      const MODEL_2_PATH = "/characters/char_1.glb";
+
+      function getPointsFromMesh(mesh, count = 50000) {
+        const geom = mesh.geometry;
+        const positions = geom.attributes.position.array;
+
+        let pts = new Float32Array(count * 3);
+        for (let i = 0; i < count; i++) {
+          let idx = Math.floor(Math.random() * (positions.length / 3)) * 3;
+          pts[i * 3] = positions[idx];
+          pts[i * 3 + 1] = positions[idx + 1];
+          pts[i * 3 + 2] = positions[idx + 2];
+        }
+        return pts;
+      }
+
+      function createParticles() {
+        const geometry = new THREE.BufferGeometry();
+
+        geometry.setAttribute(
+          "position",
+          new THREE.BufferAttribute(model1Positions, 3),
+        );
+        geometry.setAttribute(
+          "target",
+          new THREE.BufferAttribute(model2Positions, 3),
+        );
+
+        uniforms = {
+          uProgress: { value: 0 },
+          uTime: { value: 0 },
+        };
+
+        const material = new THREE.ShaderMaterial({
+          uniforms,
+          vertexShader: `
+      uniform float uProgress;
+      uniform float uTime;
+      attribute vec3 target;
+
+      void main() {
+        vec3 newPosition = mix(position, target, uProgress);
+
+        float noise = sin(uTime + newPosition.x * 5.0) * 0.05;
+        newPosition += normal * noise;
+
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
+        gl_PointSize = 2.0;
+      }
+    `,
+          fragmentShader: `
+      void main() {
+        float d = length(gl_PointCoord - vec2(0.5));
+        if(d > 0.5) discard;
+        gl_FragColor = vec4(1.0);
+      }
+    `,
+          transparent: true,
+        });
+
+        particleSystem = new THREE.Points(geometry, material);
+        scene.add(particleSystem);
+
+        animateMorph();
+      }
+
+      function animateMorph() {
+        gsap.to(uniforms.uProgress, {
+          value: 1,
+          duration: 3,
+          ease: "power2.inOut",
+          yoyo: true,
+          repeat: -1,
+        });
+      }
+
+      function loadModels() {
+        loader.load(MODEL_1_PATH, (gltf) => {
+          const mesh = gltf.scene.children[0];
+          model1Positions = getPointsFromMesh(mesh);
+
+          loader.load(MODEL_2_PATH, (gltf2) => {
+            const mesh2 = gltf2.scene.children[0];
+            model2Positions = getPointsFromMesh(mesh2);
+
+            createParticles();
+          });
+        });
+      }
+
+      function animate() {
+        requestAnimationFrame(animate);
+
+        if (uniforms) {
+          uniforms.uTime.value += 0.01;
+        }
+
+        renderer.render(scene, camera);
+      }
+
+      loadModels();
+      animate();
+
+      window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    </script>
+  </body>
+</html>

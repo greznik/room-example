@@ -31,8 +31,12 @@ export class Game {
   private updateCallbacks: TickCallback[] = [];
   private lastTime = 0;
   private trackedRoot: Object3D | null = null;
-  private readonly container: HTMLElement;
+  private _isMobile = false;
   private stats: Stats | null = null;
+  private dcPanel: Stats.Panel | null = null;
+  private bppPanel: Stats.Panel | null = null;
+  private readonly bpp: number;
+  private readonly container: HTMLElement;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -50,7 +54,7 @@ export class Game {
     this.renderer.outputColorSpace = rc.outputColorSpace;
 
     container.appendChild(this.renderer.domElement);
-
+    this.bpp = this.getBpp();
     this.scene = new Scene();
 
     const { offset, fov } = GAME_CONFIG.camera;
@@ -83,7 +87,7 @@ export class Game {
 
   dispose(): void {
     this.stop();
-    AssetLoader.reset()
+    AssetLoader.reset();
     window.removeEventListener("resize", this.onResize);
     this.renderer.dispose();
     this.stats?.dom.remove();
@@ -94,18 +98,36 @@ export class Game {
 
   private addStats(): void {
     this.stats = new Stats();
-    this.stats.dom.style.transform = "scale(0.7)";
     this.stats.dom.style.transformOrigin = "top left";
     this.stats.dom.style.zIndex = "9999";
 
-    if (getComputedStyle(this.container).position === "static") {
-      this.container.style.position = "relative";
-    }
+    // Кастомные панели
+    this.dcPanel = new Stats.Panel("DC", "#ff0", "#220");
+    this.stats.addPanel(this.dcPanel);
+    this.bppPanel = new Stats.Panel("BPP", "#0ff", "#022");
+    this.stats.addPanel(this.bppPanel);
+    this.stats.showPanel(0);
+
     this.container.appendChild(this.stats.dom);
   }
 
+  private getBpp(): number {
+    const gl = this.renderer.getContext();
+
+    const colorBits =
+      gl.getParameter(gl.RED_BITS) +
+      gl.getParameter(gl.GREEN_BITS) +
+      gl.getParameter(gl.BLUE_BITS) +
+      gl.getParameter(gl.ALPHA_BITS);
+
+    const depthBits = gl.getParameter(gl.DEPTH_BITS);
+    const stencilBits = gl.getParameter(gl.STENCIL_BITS);
+
+    return colorBits + depthBits + stencilBits;
+  }
+
   private isMobile(): boolean {
-    return this.container.clientWidth < MOBILE_BREAKPOINT;
+    return this._isMobile;
   }
 
   private tick = (time: number): void => {
@@ -118,8 +140,15 @@ export class Game {
 
     this.updateCamera();
 
-    this.stats?.update();
+    this.stats?.begin();
     this.renderer.render(this.scene, this.camera);
+    this.stats?.end();
+
+    // Обновляем кастомные панели после рендера
+    const info = this.renderer.info;
+    this.dcPanel?.update(info.render.calls, 300);
+    this.bppPanel?.update(this.bpp, 64);
+    this.renderer.info.reset(); // сбрасываем счётчики каждый кадр
   };
 
   private readonly _offsetVec = new Vector3();
@@ -143,18 +172,18 @@ export class Game {
   private onResize = (): void => {
     const { width: rawW, height: rawH } =
       this.container.getBoundingClientRect();
-    const mobile = rawW < MOBILE_BREAKPOINT;
+    this._isMobile = rawW < MOBILE_BREAKPOINT; // единственное место определения
 
     let width = rawW;
     let height = rawH;
 
-    if (!mobile) {
+    if (!this._isMobile) {
       const size = Math.min(rawW, rawH);
       width = size;
       height = size;
     }
 
-    this.camera.fov = mobile
+    this.camera.fov = this._isMobile
       ? GAME_CONFIG.camera.fov.mobile
       : GAME_CONFIG.camera.fov.desktop;
 

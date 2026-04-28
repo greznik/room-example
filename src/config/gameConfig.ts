@@ -87,7 +87,7 @@ export const GAME_CONFIG: GameConfig = {
   },
 
   camera: {
-    offset: { x: 0, y: 3.5, z: 6 },
+    offset: { x: 0, y: 2.5, z: 6 },
     lerp: 0.1,
     fov: {
       desktop: 50,
@@ -101,8 +101,8 @@ export const GAME_CONFIG: GameConfig = {
       lookAtY: 1.0,
     },
     zoom: {
-      desktop: 1.0,
-      mobile: 0.4,
+      desktop: 0.5,
+      mobile: 0.6,
     },
   },
 

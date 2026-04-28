@@ -43,9 +43,7 @@ export class AssetLoader {
     };
 
     const draco = new DRACOLoader(manager);
-    draco.setDecoderPath(
-      "https://www.gstatic.com/draco/versioned/decoders/1.5.7/",
-    );
+    draco.setDecoderPath("/draco/");
 
     this.ktx2Loader = new KTX2Loader(manager);
     this.ktx2Loader.setTranscoderPath("/basis/");
@@ -86,11 +84,12 @@ export class AssetLoader {
     if (cached) return cached;
 
     const gltf = await this.gltfLoader.loadAsync(url);
-    
+
     gltf.scene.traverse((node) => {
       if ("isMesh" in node && node.isMesh) {
         node.castShadow = true;
         node.receiveShadow = true;
+        node.frustumCulled = true
       }
     });
 
