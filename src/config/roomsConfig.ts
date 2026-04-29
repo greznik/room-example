@@ -124,7 +124,7 @@ export const ROOMS_CONFIG: RoomFullConfig[] = [
           shadowMapSize: 1024,
           shadowBias: -0.0004,
           shadowNormalBias: 0.04,
-          shadowCameraSize: 5,
+          shadowCameraSize: 20,
         },
       ],
       spot: [
@@ -211,7 +211,7 @@ export const ROOMS_CONFIG: RoomFullConfig[] = [
           shadowMapSize: 1024,
           shadowBias: -0.0004,
           shadowNormalBias: 0.04,
-          shadowCameraSize: 5,
+          shadowCameraSize: 50,
         },
       ],
       spot: [

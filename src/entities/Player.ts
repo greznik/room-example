@@ -37,7 +37,7 @@ export class Player {
 
     const gltf = await this.loader.loadGltf(conf.modelPath);
     this.root = skeletonClone(gltf.scene);
-    this.root.position.set(0.2, 0, 0);
+    this.root.position.set(0, 0, 1.5);
 
     this.speed = conf.speed;
     this.velocityX = 0;
