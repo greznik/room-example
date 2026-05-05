@@ -99,16 +99,16 @@ export const ROOMS_CONFIG: RoomFullConfig[] = [
         {
           label: "Ambient",
           color: "#ffffff",
-          intensity: 0,
-          enabled: false,
+          intensity: 1.15,
+          enabled: true,
         },
       ],
       hemisphere: [
         {
           label: "Hemisphere",
           skyColor: "#ffffff",
-          groundColor: "#080820",
-          intensity: 3.5,
+          groundColor: "#e59d38",
+          intensity: 1.8,
           enabled: true,
         },
       ],
