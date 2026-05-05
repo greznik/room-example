@@ -64,11 +64,10 @@ export class GameInitializer {
     await this.player.switchTo(GAME_CONFIG.characters[0]);
     this.game.trackObject(this.player.root);
 
-    // Game loop
     this.game.onUpdate((dt) => {
       this.player.update(dt);
       this.itemManager.update(dt);
-      this.roomManager.update(); // обновление LightDebugger хелперов
+      this.roomManager.update(); 
     });
 
     this.setupKeyboard();
@@ -77,8 +76,6 @@ export class GameInitializer {
 
     return this.buildController();
   }
-
-  // ─── Input ───────────────────────────────────────────────────────────────────
 
   private setupKeyboard(): void {
     const LEFT = new Set(["ArrowLeft", "a", "A", "ф", "Ф"]);
@@ -120,8 +117,6 @@ export class GameInitializer {
       passive: true,
     });
   }
-
-  // ─── Controller ──────────────────────────────────────────────────────────────
 
   private buildController(): GameController {
     const syncBoundary = (): void => {

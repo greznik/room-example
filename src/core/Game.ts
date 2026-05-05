@@ -41,17 +41,17 @@ export class Game {
   constructor(container: HTMLElement) {
     this.container = container;
 
-    const rc = GAME_CONFIG.renderer;
+    const cfg = GAME_CONFIG.renderer;
 
-    this.renderer = new WebGLRenderer({ antialias: rc.antialias });
+    this.renderer = new WebGLRenderer({ antialias: cfg.antialias });
     this.renderer.setPixelRatio(
-      Math.min(window.devicePixelRatio || 1, rc.pixelRatioClamp),
+      Math.min(window.devicePixelRatio || 1, cfg.pixelRatioClamp),
     );
-    this.renderer.shadowMap.enabled = rc.shadowMapEnabled;
+    this.renderer.shadowMap.enabled = cfg.shadowMapEnabled;
     this.renderer.shadowMap.type = PCFSoftShadowMap;
-    this.renderer.toneMapping = rc.toneMapping;
-    this.renderer.toneMappingExposure = rc.toneMappingExposure;
-    this.renderer.outputColorSpace = rc.outputColorSpace;
+    this.renderer.toneMapping = cfg.toneMapping;
+    this.renderer.toneMappingExposure = cfg.toneMappingExposure;
+    this.renderer.outputColorSpace = cfg.outputColorSpace;
 
     container.appendChild(this.renderer.domElement);
     this.bpp = this.getBpp();
@@ -94,14 +94,11 @@ export class Game {
     this.stats = null;
   }
 
-  // ─── Private ─────────────────────────────────────────────────────────────────
-
   private addStats(): void {
     this.stats = new Stats();
     this.stats.dom.style.transformOrigin = "top left";
     this.stats.dom.style.zIndex = "9999";
 
-    // Кастомные панели
     this.dcPanel = new Stats.Panel("DC", "#ff0", "#220");
     this.stats.addPanel(this.dcPanel);
     this.bppPanel = new Stats.Panel("BPP", "#0ff", "#022");
@@ -144,11 +141,10 @@ export class Game {
     this.renderer.render(this.scene, this.camera);
     this.stats?.end();
 
-    // Обновляем кастомные панели после рендера
     const info = this.renderer.info;
     this.dcPanel?.update(info.render.calls, 300);
     this.bppPanel?.update(this.bpp, 64);
-    this.renderer.info.reset(); // сбрасываем счётчики каждый кадр
+    this.renderer.info.reset(); 
   };
 
   private readonly _offsetVec = new Vector3();
@@ -172,7 +168,7 @@ export class Game {
   private onResize = (): void => {
     const { width: rawW, height: rawH } =
       this.container.getBoundingClientRect();
-    this._isMobile = rawW < MOBILE_BREAKPOINT; // единственное место определения
+    this._isMobile = rawW < MOBILE_BREAKPOINT; 
 
     let width = rawW;
     let height = rawH;
